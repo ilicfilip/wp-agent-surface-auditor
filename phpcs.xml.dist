@@ -1,0 +1,104 @@
+<?xml version="1.0"?>
+<ruleset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" name="ASA project" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/squizlabs/PHP_CodeSniffer/master/phpcs.xsd">
+
+	<description>A custom set of rules to check for the Agent Surface Auditor project</description>
+
+	<!-- Include all PHP files in the project. -->
+	<file>.</file>
+
+	<!-- Exclude the Composer Vendor directory. -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+
+	<!-- Exclude the Node Modules directory. -->
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+
+	<!-- Exclude the built assets directory. -->
+	<exclude-pattern>*/build/*</exclude-pattern>
+
+	<!--
+	Exclude the PHPUnit test suite. Test files intentionally diverge from the
+	plugin's production conventions: PHPUnit discovers test classes by the
+	*-test.php filename pattern (not WordPress's class-*.php), and concise test
+	docblocks are by design. Tests are still linted (php -l) and type-checked at
+	their own level via the suite run.
+	-->
+	<exclude-pattern>*/tests/*</exclude-pattern>
+
+	<!-- Exclude Javascript & CSS files. -->
+	<exclude-pattern>*.js</exclude-pattern>
+	<exclude-pattern>*.css</exclude-pattern>
+
+	<!-- Strip the filepaths down to the relevant bit. -->
+	<arg name="basepath" value="."/>
+
+	<!-- Check up to 8 files simultaneously. -->
+	<arg name="parallel" value="8"/>
+
+	<!-- Warnings are advisory; only errors should fail CI. -->
+	<config name="ignore_warnings_on_exit" value="1"/>
+
+	<!--
+	#############################################################################
+	SET UP THE RULESETS
+	#############################################################################
+	-->
+
+	<!-- Include the WordPress-Extra standard. -->
+	<rule ref="WordPress-Extra"/>
+
+	<!-- Let's also check that everything is properly documented. -->
+	<rule ref="WordPress-Docs"/>
+
+	<!-- Add in some extra rules from other standards. -->
+	<rule ref="Generic.Commenting.Todo"/>
+
+	<!-- Check for PHP cross-version compatibility (PHP 7.4 and up). -->
+	<config name="testVersion" value="7.4-"/>
+	<rule ref="PHPCompatibilityWP">
+		<include-pattern>*\.php</include-pattern>
+	</rule>
+
+	<!--
+	#############################################################################
+	SNIFF SPECIFIC CONFIGURATION
+	#############################################################################
+	-->
+
+	<!-- Minimum WordPress version: the Abilities API ships in core 6.9. -->
+	<config name="minimum_wp_version" value="6.9"/>
+
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="agent-surface-auditor"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!--
+	The plugin's namespace root is \ASA\ and its global prefix is asa_. WPCS
+	considers a 3-character prefix too short, so that one sniff message is
+	excluded — a deliberate naming decision.
+	-->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="ASA"/>
+				<element value="asa"/>
+			</property>
+		</properties>
+		<exclude name="WordPress.NamingConventions.PrefixAllGlobals.ShortPrefixPassed"/>
+	</rule>
+
+	<rule ref="WordPress">
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+		<exclude name="WordPress.PHP.YodaConditions"/>
+	</rule>
+
+	<exclude name="PEAR.Files.IncludingFile.UseRequire"/>
+
+	<!-- Enforce short arrays. -->
+	<rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+</ruleset>

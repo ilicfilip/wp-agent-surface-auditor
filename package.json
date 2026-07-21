@@ -1,0 +1,19 @@
+{
+	"name": "agent-surface-auditor",
+	"version": "0.1.0",
+	"description": "Agent Surface dashboard \u2014 React admin UI for the Agent Surface Auditor.",
+	"author": "Filip Ilic",
+	"license": "GPL-2.0-or-later",
+	"private": true,
+	"scripts": {
+		"build": "wp-scripts build --webpack-src-dir=assets/src --output-path=build",
+		"start": "wp-scripts start --webpack-src-dir=assets/src --output-path=build",
+		"lint:js": "wp-scripts lint-js assets/src",
+		"lint:css": "wp-scripts lint-style \"assets/src/**/*.scss\"",
+		"format": "wp-scripts format assets/src"
+	},
+	"devDependencies": {
+		"@wordpress/scripts": "^30.0.0",
+		"typescript": "~6.0.3"
+	}
+}

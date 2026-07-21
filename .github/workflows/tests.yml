@@ -1,0 +1,83 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+
+jobs:
+  phpunit:
+    name: 'PHPUnit: PHP ${{ matrix.php_version }} / WP ${{ matrix.wp_version }}'
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php_version: ['7.4', '8.3']
+        wp_version: ['6.9', 'latest', 'trunk']
+        exclude:
+          # Keep the matrix lean: old PHP is exercised against the oldest
+          # supported WP; current PHP covers the rest.
+          - php_version: '7.4'
+            wp_version: 'latest'
+          - php_version: '7.4'
+            wp_version: 'trunk'
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: asa_tests
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php_version }}
+          extensions: mysqli
+          coverage: none
+          tools: composer
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+        with:
+          custom-cache-suffix: $(date -u "+%Y-%m")
+
+      - name: Run unit suite (no WordPress needed)
+        run: composer test
+
+      - name: Install the WordPress test suite
+        run: |
+          # The mysql service already created the DB (MYSQL_DATABASE), so the
+          # final arg skips DB creation.
+          bash bin/install-wp-tests.sh asa_tests root root 127.0.0.1:3306 ${{ matrix.wp_version }} true
+          # Fail loudly here if the test library did not land, instead of
+          # letting PHPUnit fail with a confusing "functions.php not found".
+          test -f /tmp/wordpress-tests-lib/includes/functions.php
+
+      - name: Run integration suite
+        env:
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
+        run: composer test-integration

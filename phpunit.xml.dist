@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+	bootstrap="tests/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	cacheResult="false"
+	>
+	<testsuites>
+		<testsuite name="unit">
+			<directory suffix="-test.php">./tests/Unit</directory>
+		</testsuite>
+		<testsuite name="integration">
+			<directory suffix="-test.php">./tests/Integration</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

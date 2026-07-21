@@ -1,0 +1,49 @@
+parameters:
+  level: 10
+  reportUnmatchedIgnoredErrors: false
+  paths:
+    - ./src
+    - ./agent-surface-auditor.php
+    - ./uninstall.php
+  ignoreErrors:
+    # --- Type-detail noise we don't enforce (mirrors wp-ai-usage-tracker). ---
+    - identifier: missingType.iterableValue
+    - identifier: missingType.generics
+    - identifier: binaryOp.invalid
+    - identifier: cast.string
+    - identifier: offsetAccess.nonOffsetAccessible
+    - identifier: assign.propertyType
+    - identifier: method.nonObject
+    - identifier: property.nonObject
+    - identifier: foreach.nonIterable
+    - identifier: argument.type
+    - identifier: return.type
+
+    # --- Adapter server/component objects are typed `object`: the MCP Adapter
+    #     ships no stubs, so every method call is method_exists-guarded and
+    #     Throwable-wrapped instead of statically typed. ---
+    - identifier: method.notFound
+
+    # --- Defensive guards on values PHPStan trusts from PHPDoc (wp_get_abilities
+    #     return docs, our own capture array). The guards are kept because the
+    #     inputs are foreign state. ---
+    - identifier: instanceof.alwaysTrue
+    - identifier: booleanAnd.alwaysTrue
+
+    # --- Single-file analysis can't see constants defined in the main plugin
+    #     file. Guarded/defined for real. ---
+    - identifier: constant.notFound
+
+    # --- The auditor is defensive by design: every read of foreign state
+    #     (adapter objects, meta arrays) is runtime-guarded even where PHPStan
+    #     considers the guard redundant on the currently-known types. ---
+    - identifier: function.alreadyNarrowedType
+    - identifier: notIdentical.alwaysTrue
+    - identifier: booleanAnd.rightAlwaysTrue
+    - identifier: deadCode.unreachable
+
+    # --- The MCP Adapter (WP\MCP\...) is an optional plugin with no PHPStan
+    #     stubs; all access is class_exists/method_exists-guarded and wrapped. ---
+    - '#unknown class WP\\MCP\\.*#'
+    - '#Call to (static )?method [a-zA-Z0-9_]+\(\) on an unknown class WP\\MCP\\.*#'
+    - '#Call to method [a-zA-Z0-9_]+\(\) on object#'

@@ -1,0 +1,249 @@
+@use "sass:map";
+
+/**
+ * Agent Surface dashboard styles.
+ *
+ * A calm severity color language: critical/high must be unmissable, info must
+ * recede. Everything else defers to wp-admin defaults.
+ */
+
+$severity-colors: (
+	critical: #b32d2e,
+	high: #d63638,
+	medium: #dba617,
+	low: #2271b1,
+	info: #757575,
+	none: #00844a,
+);
+
+.asa-app {
+	max-width: 1200px;
+}
+
+.asa-loading {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 24px 0;
+}
+
+.asa-toolbar {
+	display: flex;
+	gap: 8px;
+	margin: 16px 0;
+}
+
+/* ------------------------------------------------------------------ badges */
+
+.asa-badge {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: #fff;
+
+	@each $level, $color in $severity-colors {
+		&--#{$level} {
+			background: $color;
+		}
+	}
+
+	&--medium {
+		color: #1d2327;
+	}
+}
+
+/* ----------------------------------------------------------------- summary */
+
+.asa-summary {
+	margin-bottom: 16px;
+
+	&__cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+		gap: 12px;
+		margin-bottom: 12px;
+	}
+
+	&__card {
+		background: #fff;
+		border: 1px solid #dcdcde;
+		border-radius: 4px;
+		padding: 12px 16px;
+		display: flex;
+		flex-direction: column;
+
+		&--highlight {
+			border-color: #d63638;
+			box-shadow: inset 4px 0 0 #d63638;
+		}
+	}
+
+	&__value {
+		font-size: 28px;
+		font-weight: 600;
+		line-height: 1.2;
+	}
+
+	&__label {
+		color: #50575e;
+		font-size: 12px;
+	}
+
+	&__severities {
+		display: flex;
+		gap: 16px;
+		align-items: center;
+		margin-bottom: 8px;
+	}
+
+	&__severity {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	&__severity-count {
+		font-weight: 600;
+	}
+
+	&__meta {
+		color: #50575e;
+		margin: 4px 0;
+	}
+
+	&__disclaimer {
+		color: #757575;
+		font-style: italic;
+		margin: 4px 0 0;
+	}
+}
+
+/* ------------------------------------------------------------------- table */
+
+.asa-filters {
+	display: flex;
+	gap: 16px;
+	align-items: flex-end;
+	margin: 12px 0;
+
+	.components-base-control {
+		margin-bottom: 0;
+	}
+}
+
+.asa-table {
+
+	td {
+		vertical-align: middle;
+	}
+
+	.asa-expander {
+		padding: 0;
+		min-width: 24px;
+		height: 24px;
+		margin-right: 4px;
+	}
+}
+
+.asa-detail-row > td {
+	background: #f6f7f7;
+	padding: 16px 24px;
+}
+
+.asa-row--critical > td:first-child {
+	box-shadow: inset 4px 0 0 map.get($severity-colors, critical);
+}
+
+.asa-row--high > td:first-child {
+	box-shadow: inset 4px 0 0 map.get($severity-colors, high);
+}
+
+.asa-finding {
+	border-left: 4px solid #dcdcde;
+	padding: 4px 12px;
+	margin-bottom: 12px;
+	background: #fff;
+
+	@each $level, $color in $severity-colors {
+		&--#{$level} {
+			border-left-color: $color;
+		}
+	}
+
+	&__head {
+		margin: 4px 0;
+	}
+
+	&__remediation {
+		color: #50575e;
+	}
+}
+
+.asa-confidence {
+	color: #757575;
+	font-size: 12px;
+}
+
+.asa-unverified {
+	cursor: help;
+}
+
+.asa-detail__clean {
+	color: #00844a;
+}
+
+.asa-detail__facts {
+	color: #50575e;
+	font-size: 12px;
+
+	p {
+		margin: 4px 0;
+	}
+}
+
+/* ----------------------------------------------------------------- servers */
+
+.asa-servers {
+	margin-top: 12px;
+}
+
+.asa-server {
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	padding: 12px 16px;
+	margin-bottom: 12px;
+
+	h3 {
+		margin: 4px 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	&__meta {
+		color: #50575e;
+		margin: 4px 0;
+	}
+
+	&__note {
+		font-style: italic;
+		color: #757575;
+	}
+
+	&__components {
+
+		h4 {
+			margin: 8px 0 4px;
+		}
+
+		ul {
+			margin: 0 0 8px 16px;
+			list-style: disc;
+		}
+	}
+}
