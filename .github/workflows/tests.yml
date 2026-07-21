@@ -52,6 +52,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # The WP test-suite installer checks out the develop repo over
+      # Subversion for the 'trunk'/'nightly' targets; runners no longer ship
+      # svn preinstalled.
+      - name: Install Subversion
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
       - name: Install PHP
         uses: shivammathur/setup-php@v2
         with:
