@@ -109,4 +109,27 @@ function asa_tests_register_fixture_abilities() {
 			],
 		]
 	);
+
+	// The core/get-user-info shape: a credibly read-only, self-scoped read
+	// behind an auth-only gate. ASA003 downgraded to low, no ASA005.
+	wp_register_ability(
+		'asa-fixture/auth-only-reader',
+		[
+			'label'               => 'Auth Only Reader',
+			'description'         => 'Read-only self-scoped read gated only on authentication.',
+			'category'            => 'asa-fixtures',
+			'execute_callback'    => static function () {
+				return wp_get_current_user()->user_email;
+			},
+			'permission_callback' => 'is_user_logged_in',
+			'meta'                => [
+				'annotations'  => [
+					'readonly'    => true,
+					'destructive' => false,
+					'idempotent'  => true,
+				],
+				'show_in_rest' => true,
+			],
+		]
+	);
 }

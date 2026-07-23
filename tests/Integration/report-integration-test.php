@@ -97,6 +97,21 @@ class Report_Integration_Test extends WP_UnitTestCase {
 		$this->assertContains( 'ASA005', $rule_ids );
 	}
 
+	public function test_auth_only_reader_is_downgraded_and_not_composited() {
+		$ability   = $this->ability( 'asa-fixture/auth-only-reader' );
+		$rule_ids  = $this->rule_ids( 'asa-fixture/auth-only-reader' );
+		$asa003    = null;
+		foreach ( $ability['findings'] as $finding ) {
+			if ( $finding['rule_id'] === 'ASA003' ) {
+				$asa003 = $finding;
+			}
+		}
+
+		$this->assertNotNull( $asa003, 'ASA003 should still fire — the fact is reported, not hidden.' );
+		$this->assertSame( 'low', $asa003['severity'] );
+		$this->assertNotContains( 'ASA005', $rule_ids );
+	}
+
 	public function test_rest_exposure_is_resolved_from_show_in_rest() {
 		$this->assertTrue( $this->ability( 'asa-fixture/open-door' )['exposure']['rest'] );
 		$this->assertFalse( $this->ability( 'asa-fixture/safe-reader' )['exposure']['rest'] );

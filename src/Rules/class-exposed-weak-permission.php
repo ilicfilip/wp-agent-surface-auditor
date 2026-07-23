@@ -22,6 +22,11 @@ defined( 'ABSPATH' ) || exit;
  * Runs last in the engine order and consumes prior findings rather than
  * re-detecting the smells. Confidence is inherited from the weakest
  * contributing finding — a composite is never more certain than its parts.
+ *
+ * By the same logic it is never graver than its parts: when every
+ * contributing smell was downgraded to low (ASA003 on a credibly read-only
+ * ability), this rule stays silent rather than asserting a weak gate the
+ * contributing rule no longer claims. The low finding still stands on its own.
  */
 class Exposed_Weak_Permission implements Rule {
 
@@ -62,6 +67,21 @@ class Exposed_Weak_Permission implements Rule {
 		}
 
 		if ( $contributing === [] ) {
+			return [];
+		}
+
+		// A composite is never graver than its parts. When every contributing
+		// smell was itself downgraded to low — the credibly-read-only
+		// auth-only gate of ASA003 — exposure does not make it critical.
+		$downgraded = true;
+		foreach ( $contributing as $finding ) {
+			if ( $finding->severity !== Finding::SEVERITY_LOW ) {
+				$downgraded = false;
+				break;
+			}
+		}
+
+		if ( $downgraded ) {
 			return [];
 		}
 

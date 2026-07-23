@@ -63,6 +63,34 @@ class Exposed_Weak_Permission_Test extends ASA_TestCase {
 		$this->assertStringContainsString( 'ASA003', $finding->message );
 	}
 
+	public function test_silent_when_every_contributing_smell_was_downgraded() {
+		$rule = new Exposed_Weak_Permission();
+
+		// A downgraded ASA003 (credibly read-only, auth-only gate) no longer
+		// asserts a weak gate, so the composite must not escalate it.
+		$prior = [ $this->finding( 'ASA003', Finding::SEVERITY_LOW, Finding::CONFIDENCE_MEDIUM ) ];
+
+		$this->assertSame(
+			[],
+			$rule->evaluate( $this->descriptor(), $this->exposure( [ 'rest' => true ] ), $prior )
+		);
+	}
+
+	public function test_fires_when_a_downgraded_smell_accompanies_a_real_one() {
+		$rule = new Exposed_Weak_Permission();
+
+		$prior = [
+			$this->finding( 'ASA003', Finding::SEVERITY_LOW, Finding::CONFIDENCE_MEDIUM ),
+			$this->finding( 'ASA001', Finding::SEVERITY_CRITICAL, Finding::CONFIDENCE_HIGH ),
+		];
+
+		$finding = $this->assertSingleFinding(
+			'ASA005',
+			$rule->evaluate( $this->descriptor(), $this->exposure( [ 'rest' => true ] ), $prior )
+		);
+		$this->assertSame( Finding::SEVERITY_CRITICAL, $finding->severity );
+	}
+
 	public function test_intended_only_mcp_exposure_counts_as_reachable() {
 		$rule = new Exposed_Weak_Permission();
 

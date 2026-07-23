@@ -109,7 +109,7 @@ function intentLabel( descriptor ) {
  * Permission status cell, derived from findings + analysis.
  *
  * @param {Object} ability One report ability entry.
- * @return {string} One of ok / weak / missing / unanalyzable.
+ * @return {string} One of ok / weak / auth-only / missing / unanalyzable.
  */
 function permissionStatus( ability ) {
 	const ruleIds = ability.findings.map( ( finding ) => finding.rule_id );
@@ -119,10 +119,18 @@ function permissionStatus( ability ) {
 	}
 	if (
 		ruleIds.includes( 'ASA002' ) ||
-		ruleIds.includes( 'ASA003' ) ||
-		ruleIds.includes( 'ASA008' )
+		ruleIds.includes( 'ASA008' ) ||
+		ability.findings.some(
+			( finding ) =>
+				finding.rule_id === 'ASA003' && finding.severity !== 'low'
+		)
 	) {
 		return __( 'weak', 'agent-surface-auditor' );
+	}
+	// A downgraded ASA003: authentication is plausibly the right gate for a
+	// credibly read-only ability, so state the shape rather than judge it.
+	if ( ruleIds.includes( 'ASA003' ) ) {
+		return __( 'auth-only', 'agent-surface-auditor' );
 	}
 	if (
 		ability.descriptor.callback_origin === 'unavailable' ||
