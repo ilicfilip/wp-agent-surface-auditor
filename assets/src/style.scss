@@ -192,6 +192,24 @@ $severity-colors: (
 	cursor: help;
 }
 
+.asa-info {
+	cursor: help;
+	color: #787c82;
+	font-size: 13px;
+	vertical-align: baseline;
+	user-select: none;
+
+	&:hover {
+		color: #2271b1;
+	}
+}
+
+.asa-help {
+	cursor: help;
+	text-decoration: underline dotted #c3c4c7;
+	text-underline-offset: 2px;
+}
+
 .asa-detail__clean {
 	color: #00844a;
 }

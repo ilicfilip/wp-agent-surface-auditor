@@ -18,6 +18,49 @@ import { LevelBadge } from './App';
 const RISK_ORDER = [ 'critical', 'high', 'medium', 'low', 'info', 'none' ];
 
 /**
+ * A column header with an info marker that explains the column on hover.
+ *
+ * @param {Object} props       Component props.
+ * @param {string} props.label The visible column name.
+ * @param {string} props.help  The tooltip text describing the column.
+ * @return {JSX.Element} The header cell contents.
+ */
+function HeaderLabel( { label, help } ) {
+	return (
+		<>
+			{ label }{ ' ' }
+			<span
+				className="asa-info"
+				title={ help }
+				role="img"
+				aria-label={ help }
+			>
+				ⓘ
+			</span>
+		</>
+	);
+}
+
+/**
+ * A cell value carrying its own hover explanation.
+ *
+ * @param {Object} props       Component props.
+ * @param {string} props.label The visible value.
+ * @param {string} props.help  The tooltip text (empty = no tooltip).
+ * @return {JSX.Element} The value, wrapped so hovering shows help.
+ */
+function ValueWithHelp( { label, help } ) {
+	if ( ! help ) {
+		return <>{ label }</>;
+	}
+	return (
+		<span className="asa-help" title={ help }>
+			{ label }
+		</span>
+	);
+}
+
+/**
  * Shorten an absolute server path to a WP-root-relative one for display.
  * Absolute paths are noise (and needlessly disclose the server layout);
  * everything interesting starts at wp-includes/, wp-content/, or wp-admin/.
@@ -109,13 +152,19 @@ function intentLabel( descriptor ) {
  * Permission status cell, derived from findings + analysis.
  *
  * @param {Object} ability One report ability entry.
- * @return {string} One of ok / weak / auth-only / missing / unanalyzable.
+ * @return {{label: string, help: string}} Status label and its explanation.
  */
 function permissionStatus( ability ) {
 	const ruleIds = ability.findings.map( ( finding ) => finding.rule_id );
 
 	if ( ruleIds.includes( 'ASA001' ) ) {
-		return __( 'missing', 'agent-surface-auditor' );
+		return {
+			label: __( 'missing', 'agent-surface-auditor' ),
+			help: __(
+				'No permission_callback resolved — every caller passes the gate. (ASA001)',
+				'agent-surface-auditor'
+			),
+		};
 	}
 	if (
 		ruleIds.includes( 'ASA002' ) ||
@@ -125,20 +174,44 @@ function permissionStatus( ability ) {
 				finding.rule_id === 'ASA003' && finding.severity !== 'low'
 		)
 	) {
-		return __( 'weak', 'agent-surface-auditor' );
+		return {
+			label: __( 'weak', 'agent-surface-auditor' ),
+			help: __(
+				'The gate admits more callers than the operation should allow: an unconditional allow, a broad capability on a write, or auth-only on something non-trivial. (ASA002/003/008)',
+				'agent-surface-auditor'
+			),
+		};
 	}
 	// A downgraded ASA003: authentication is plausibly the right gate for a
 	// credibly read-only ability, so state the shape rather than judge it.
 	if ( ruleIds.includes( 'ASA003' ) ) {
-		return __( 'auth-only', 'agent-surface-auditor' );
+		return {
+			label: __( 'auth-only', 'agent-surface-auditor' ),
+			help: __(
+				'The gate only checks that someone is logged in, not who — any authenticated user passes. Plausibly fine for a read scoped to the current user; verify it. (ASA003)',
+				'agent-surface-auditor'
+			),
+		};
 	}
 	if (
 		ability.descriptor.callback_origin === 'unavailable' ||
 		! ability.descriptor.permission_analysis?.resolved
 	) {
-		return __( 'unanalyzable', 'agent-surface-auditor' );
+		return {
+			label: __( 'unanalyzable', 'agent-surface-auditor' ),
+			help: __(
+				'The permission_callback could not be resolved to readable source, so it was not inspected — not passed, just unknown. (ASA000)',
+				'agent-surface-auditor'
+			),
+		};
 	}
-	return __( 'no smells detected', 'agent-surface-auditor' );
+	return {
+		label: __( 'no smells detected', 'agent-surface-auditor' ),
+		help: __(
+			'The permission checks ran and none matched. This means no known-bad pattern was found — NOT a guarantee the ability is safe.',
+			'agent-surface-auditor'
+		),
+	};
 }
 
 /**
@@ -176,9 +249,34 @@ function Row( { ability } ) {
 					<code>{ descriptor.name }</code>
 				</td>
 				<td>{ descriptor.category }</td>
-				<td>{ exposureLabel( exposure ) }</td>
-				<td>{ intentLabel( descriptor ) }</td>
-				<td>{ permissionStatus( ability ) }</td>
+				<td>
+					<ValueWithHelp
+						label={ exposureLabel( exposure ) }
+						help={
+							exposure.agent_reachable
+								? __(
+										'Reachable by an agent through the channel(s) shown — the core REST run endpoint and/or an MCP server.',
+										'agent-surface-auditor'
+								  )
+								: __(
+										'Not agent-reachable: not exposed over the core REST run endpoint or any MCP server.',
+										'agent-surface-auditor'
+								  )
+						}
+					/>
+				</td>
+				<td>
+					<ValueWithHelp
+						label={ intentLabel( descriptor ) }
+						help={ __(
+							'Whether the ability changes the site. "(declared)" is read from its annotations; "writes?" with ⚠ is inferred from the callback source and is unverified.',
+							'agent-surface-auditor'
+						) }
+					/>
+				</td>
+				<td>
+					<ValueWithHelp { ...permissionStatus( ability ) } />
+				</td>
 				<td>
 					<LevelBadge level={ risk } />
 				</td>
@@ -379,12 +477,75 @@ export default function AbilitiesTable( { abilities } ) {
 			<table className="widefat striped asa-table">
 				<thead>
 					<tr>
-						<th>{ __( 'Ability', 'agent-surface-auditor' ) }</th>
-						<th>{ __( 'Category', 'agent-surface-auditor' ) }</th>
-						<th>{ __( 'Exposed?', 'agent-surface-auditor' ) }</th>
-						<th>{ __( 'Read/write', 'agent-surface-auditor' ) }</th>
-						<th>{ __( 'Permission', 'agent-surface-auditor' ) }</th>
-						<th>{ __( 'Risk', 'agent-surface-auditor' ) }</th>
+						<th>
+							<HeaderLabel
+								label={ __(
+									'Ability',
+									'agent-surface-auditor'
+								) }
+								help={ __(
+									'The registered ability name (namespace/slug). Expand a row for its label, schema, annotations, and callback source.',
+									'agent-surface-auditor'
+								) }
+							/>
+						</th>
+						<th>
+							<HeaderLabel
+								label={ __(
+									'Category',
+									'agent-surface-auditor'
+								) }
+								help={ __(
+									'The ability’s declared category, as grouped by whoever registered it.',
+									'agent-surface-auditor'
+								) }
+							/>
+						</th>
+						<th>
+							<HeaderLabel
+								label={ __(
+									'Exposed?',
+									'agent-surface-auditor'
+								) }
+								help={ __(
+									'Whether an AI agent can reach this ability, and how: the core REST run endpoint, an MCP server (default or custom), or “intended” (declared public but no live MCP adapter to confirm it). “No” means no agent-reachable channel.',
+									'agent-surface-auditor'
+								) }
+							/>
+						</th>
+						<th>
+							<HeaderLabel
+								label={ __(
+									'Read/write',
+									'agent-surface-auditor'
+								) }
+								help={ __(
+									'Whether the ability changes the site. “(declared)” comes from its annotations; “writes?” with ⚠ is inferred from the callback source and is unverified; “undeclared” means it stated no intent.',
+									'agent-surface-auditor'
+								) }
+							/>
+						</th>
+						<th>
+							<HeaderLabel
+								label={ __(
+									'Permission',
+									'agent-surface-auditor'
+								) }
+								help={ __(
+									'How well the permission_callback gates the ability. missing = no gate · weak = admits too many callers · auth-only = only checks that someone is logged in · unanalyzable = source unreadable · no smells detected = checks ran and none matched (not a safety guarantee).',
+									'agent-surface-auditor'
+								) }
+							/>
+						</th>
+						<th>
+							<HeaderLabel
+								label={ __( 'Risk', 'agent-surface-auditor' ) }
+								help={ __(
+									'The severity of this ability’s worst finding (critical → info), or “none” when nothing was flagged. Expand the row to see each finding and its remediation.',
+									'agent-surface-auditor'
+								) }
+							/>
+						</th>
 					</tr>
 				</thead>
 				<tbody>
