@@ -10,6 +10,7 @@ namespace ASA;
 use ASA\Admin\Rest_Controller;
 use ASA\Admin\Settings_Page;
 use ASA\Analysis\Callback_Capture;
+use ASA\Cli\Audit_Command;
 
 defined( 'ABSPATH' ) || exit;
 
@@ -56,5 +57,8 @@ class Plugin {
 			$page = new Settings_Page();
 			$page->register();
 		}
+
+		// `wp asa audit` — read-only CLI runner + CI gate. No-op without WP-CLI.
+		Audit_Command::register();
 	}
 }

@@ -77,6 +77,33 @@ All routes require `manage_options` (filter: `asa_capability`):
 - `GET /wp-json/asa/v1/servers` — MCP server inventory + adapter state
 - `GET /wp-json/asa/v1/export` — report as a download attachment
 
+## WP-CLI & CI
+
+The plugin registers `wp asa audit` (read-only, like everything else):
+
+```
+wp asa audit                       # human-readable summary
+wp asa audit --format=table        # per-ability table
+wp asa audit --format=json         # full report as JSON
+wp asa audit --fresh               # bypass the cached report
+wp asa audit --fail-on=high        # exit non-zero if any high+ finding exists
+```
+
+**Regression gate.** Export a baseline, commit it, then diff against it in CI —
+the build fails only when a *newly appeared* finding crosses your threshold, so
+pre-existing findings don't block you:
+
+```
+# once, to capture the current surface:
+wp asa audit --fresh --format=json > asa-baseline.json
+
+# in CI:
+wp asa audit --baseline=asa-baseline.json --fail-on-new=high
+```
+
+The diff reports new findings, resolved findings, per-ability risk changes, and
+abilities added to or removed from the surface.
+
 ## Development
 
 Quality gates: `composer lint` · `composer check-cs` (WPCS) · `composer

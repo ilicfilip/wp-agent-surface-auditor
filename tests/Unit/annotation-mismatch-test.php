@@ -13,7 +13,7 @@ use ASA\Rules\Annotation_Mismatch;
  */
 class Annotation_Mismatch_Test extends ASA_TestCase {
 
-	private function writing_execute_analysis() {
+	private function writing_execute_analysis( $confirmed = false ) {
 		return [
 			'resolved'                  => true,
 			'returns_only_literal_true' => null,
@@ -21,6 +21,7 @@ class Annotation_Mismatch_Test extends ASA_TestCase {
 			'calls_is_user_logged_in'   => false,
 			'capability_checks'         => [],
 			'write_indicators'          => [ 'wp_insert_post()', 'update_option()' ],
+			'has_confirmed_write'       => $confirmed,
 		];
 	}
 
@@ -41,6 +42,17 @@ class Annotation_Mismatch_Test extends ASA_TestCase {
 		$this->assertStringContainsString( 'readonly: true', $finding->message );
 		$this->assertStringContainsString( 'wp_insert_post()', $finding->message );
 		$this->assertStringContainsString( 'verify', $finding->message );
+	}
+
+	public function test_confirmed_write_raises_confidence_to_medium() {
+		$rule = new Annotation_Mismatch();
+
+		$descriptor = $this->descriptor( [ 'execute_analysis' => $this->writing_execute_analysis( true ) ] );
+
+		$finding = $this->assertSingleFinding( 'ASA006', $rule->evaluate( $descriptor, $this->exposure() ) );
+		$this->assertSame( Finding::SEVERITY_MEDIUM, $finding->severity );
+		$this->assertSame( Finding::CONFIDENCE_MEDIUM, $finding->confidence );
+		$this->assertStringContainsString( 'the implementation performs a write', $finding->message );
 	}
 
 	public function test_destructive_false_claim_also_fires() {

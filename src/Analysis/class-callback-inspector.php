@@ -134,6 +134,12 @@ class Callback_Inspector {
 	 *     @type string[]  $capability_checks         Literal first string args of
 	 *                                                capability checks.
 	 *     @type string[]  $write_indicators          Matched write functions/methods.
+	 *     @type bool      $has_confirmed_write       An unambiguous write was seen
+	 *                                                (a named write function, a
+	 *                                                $wpdb write method, or a
+	 *                                                query() with literal write
+	 *                                                SQL) — distinct from a bare
+	 *                                                query() smell.
 	 * }
 	 */
 	public static function analyze( array $info ) {
@@ -144,6 +150,7 @@ class Callback_Inspector {
 			'calls_is_user_logged_in'   => false,
 			'capability_checks'         => [],
 			'write_indicators'          => [],
+			'has_confirmed_write'       => false,
 		];
 
 		$name = isset( $info['name'] ) && is_string( $info['name'] ) ? strtolower( $info['name'] ) : null;
@@ -261,7 +268,23 @@ class Callback_Inspector {
 
 						// Method call: match against the write-method list.
 						if ( $prev_token[0] === T_OBJECT_OPERATOR && Write_Indicators::is_write_method( $token[1] ) ) {
-							self::add_unique( $analysis['write_indicators'], '->' . strtolower( $token[1] ) . '()' );
+							$method = strtolower( $token[1] );
+
+							// insert/update/delete/replace are unambiguous writes;
+							// query() is only confirmed when its first literal arg
+							// is write SQL (else it stays a weak "->query()" smell).
+							if ( 'query' === $method ) {
+								$sql = self::first_string_arg( $tokens, $i, $count );
+								if ( $sql !== null && Write_Indicators::is_write_sql( $sql ) ) {
+									self::add_unique( $analysis['write_indicators'], '->query() [write SQL]' );
+									$analysis['has_confirmed_write'] = true;
+								} else {
+									self::add_unique( $analysis['write_indicators'], '->query()' );
+								}
+							} else {
+								self::add_unique( $analysis['write_indicators'], '->' . $method . '()' );
+								$analysis['has_confirmed_write'] = true;
+							}
 						}
 					}
 				}
@@ -279,6 +302,7 @@ class Callback_Inspector {
 						$analysis['calls_is_user_logged_in'] = true;
 					} elseif ( Write_Indicators::is_write_function( $called ) ) {
 						self::add_unique( $analysis['write_indicators'], $called . '()' );
+						$analysis['has_confirmed_write'] = true;
 					}
 				}
 			}

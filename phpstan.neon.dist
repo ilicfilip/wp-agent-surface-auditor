@@ -47,3 +47,11 @@ parameters:
     - '#unknown class WP\\MCP\\.*#'
     - '#Call to (static )?method [a-zA-Z0-9_]+\(\) on an unknown class WP\\MCP\\.*#'
     - '#Call to method [a-zA-Z0-9_]+\(\) on object#'
+
+    # --- WP-CLI is present only under `wp`; the command class is registered
+    #     behind a defined('WP_CLI') guard and never loaded otherwise. No stubs
+    #     ship in the analysis, so its symbols read as unknown. ---
+    - '#unknown class WP_CLI(\\.*)?#'
+    - '#Call to (static )?method [a-zA-Z0-9_]+\(\) on an unknown class WP_CLI(\\.*)?#'
+    - '#used in place of native symbol#'
+    - '#Function WP_CLI\\Utils\\[a-zA-Z0-9_]+ not found#'

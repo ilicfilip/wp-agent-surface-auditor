@@ -69,6 +69,18 @@ function asa_fixture_wpdb_writer() {
 }
 
 /**
+ * A $wpdb caller whose SQL is dynamic — the scan cannot read the verb, so this
+ * stays a weak `->query()` smell rather than a confirmed write.
+ *
+ * @param string $sql Arbitrary SQL supplied at runtime.
+ * @return mixed Query result.
+ */
+function asa_fixture_wpdb_dynamic_query( $sql ) {
+	global $wpdb;
+	return $wpdb->query( $sql );
+}
+
+/**
  * A pure reader. Mentions wp_insert_post only inside a comment and a string,
  * which the token-based scan must NOT match.
  *

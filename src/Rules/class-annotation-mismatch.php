@@ -65,12 +65,23 @@ class Annotation_Mismatch implements Rule {
 
 		$claim = $claims_readonly ? 'readonly: true' : 'destructive: false';
 
+		// A named write function, a $wpdb write method, or a query() carrying
+		// literal write SQL is an unambiguous write — raise confidence from the
+		// default `low` (which still covers bare query()/incidental-write cases)
+		// to `medium`. The write may still sit on a dead path, so never `high`.
+		$confirmed  = ! empty( $analysis['has_confirmed_write'] );
+		$confidence = $confirmed ? Finding::CONFIDENCE_MEDIUM : Finding::CONFIDENCE_LOW;
+
+		$qualifier = $confirmed
+			? 'the implementation performs a write'
+			: 'the implementation appears to write';
+
 		return [
 			new Finding(
 				$this->id(),
 				Finding::SEVERITY_MEDIUM,
-				Finding::CONFIDENCE_LOW,
-				'Annotation claims ' . $claim . ', but the execute callback\'s implementation appears to write ('
+				$confidence,
+				'Annotation claims ' . $claim . ', but ' . $qualifier . ' ('
 					. implode( ', ', array_slice( $indicators, 0, 5 ) ) . ') — verify. '
 					. 'MCP clients receive this annotation as a hint and may act on it autonomously.',
 				'Either correct the annotation to reflect what the ability does, or remove the write from the '

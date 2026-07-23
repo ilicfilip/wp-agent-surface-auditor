@@ -79,6 +79,15 @@ class Write_Indicators {
 		'wp_delete_comment',
 		'wp_new_comment',
 		'wp_set_comment_status',
+		'wp_update_comment_count',
+		// Common wrapper/helper functions that persist indirectly.
+		'wp_save_post_revision',
+		'wp_set_post_categories',
+		'wp_set_post_tags',
+		'set_post_thumbnail',
+		'wp_set_current_user',
+		'update_term_count',
+		'wp_update_nav_menu_item',
 		// Plugins, themes, cron.
 		'activate_plugin',
 		'deactivate_plugins',
@@ -144,5 +153,42 @@ class Write_Indicators {
 	 */
 	public static function is_write_method( $name ) {
 		return in_array( strtolower( $name ), self::WPDB_METHODS, true );
+	}
+
+	/**
+	 * SQL statement verbs that mutate data or schema.
+	 *
+	 * @var string[]
+	 */
+	const SQL_WRITE_VERBS = [
+		'insert',
+		'update',
+		'delete',
+		'replace',
+		'truncate',
+		'drop',
+		'alter',
+		'create',
+	];
+
+	/**
+	 * Whether a literal SQL string begins with a write/DDL verb.
+	 *
+	 * `$wpdb->query()` accepts arbitrary SQL, so a bare `query()` is only a
+	 * weak indicator. When the first argument is a literal string starting with
+	 * INSERT/UPDATE/DELETE/… we can say the write is real, not merely possible —
+	 * which lets ASA006 raise its confidence above the default `low`.
+	 *
+	 * @param string $sql A literal SQL string (already unquoted).
+	 * @return bool True when it starts with a write verb.
+	 */
+	public static function is_write_sql( $sql ) {
+		$trimmed = ltrim( $sql );
+		foreach ( self::SQL_WRITE_VERBS as $verb ) {
+			if ( 0 === strncasecmp( $trimmed, $verb, strlen( $verb ) ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

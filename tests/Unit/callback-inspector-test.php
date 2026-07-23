@@ -66,12 +66,22 @@ class Callback_Inspector_Test extends ASA_TestCase {
 
 		$this->assertContains( 'wp_insert_post()', $analysis['write_indicators'] );
 		$this->assertContains( 'update_option()', $analysis['write_indicators'] );
+		$this->assertTrue( $analysis['has_confirmed_write'] );
 	}
 
-	public function test_wpdb_writer_fixture_yields_method_indicator() {
+	public function test_wpdb_writer_with_literal_write_sql_is_confirmed() {
 		$analysis = $this->analyze_fixture( 'asa_fixture_wpdb_writer' );
 
+		$this->assertContains( '->query() [write SQL]', $analysis['write_indicators'] );
+		$this->assertTrue( $analysis['has_confirmed_write'] );
+	}
+
+	public function test_wpdb_dynamic_query_stays_a_weak_smell() {
+		$analysis = $this->analyze_fixture( 'asa_fixture_wpdb_dynamic_query' );
+
 		$this->assertContains( '->query()', $analysis['write_indicators'] );
+		$this->assertNotContains( '->query() [write SQL]', $analysis['write_indicators'] );
+		$this->assertFalse( $analysis['has_confirmed_write'] );
 	}
 
 	public function test_reader_fixture_is_clean_despite_comment_and_string_mentions() {
@@ -79,6 +89,7 @@ class Callback_Inspector_Test extends ASA_TestCase {
 
 		$this->assertTrue( $analysis['resolved'] );
 		$this->assertSame( [], $analysis['write_indicators'] );
+		$this->assertFalse( $analysis['has_confirmed_write'] );
 	}
 
 	public function test_wp_builtin_return_true_resolves_by_name() {
