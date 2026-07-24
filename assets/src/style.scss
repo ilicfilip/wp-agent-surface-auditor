@@ -287,3 +287,36 @@ $severity-colors: (
 		}
 	}
 }
+
+/* ------------------------------------------------ client-side abilities */
+
+.asa-client-abilities {
+	margin: 20px 0 0;
+	padding: 12px 16px;
+	background: #fcf9e8;
+	border-left: 4px solid #dba617;
+
+	&__title {
+		margin: 0 0 4px;
+		font-size: 14px;
+	}
+
+	&__note {
+		margin: 0 0 8px;
+		color: #50575e;
+		font-size: 13px;
+	}
+
+	&__list {
+		margin: 0 0 0 16px;
+		list-style: disc;
+
+		li {
+			margin: 2px 0;
+		}
+
+		code {
+			font-size: 12px;
+		}
+	}
+}

@@ -18,6 +18,7 @@ import { __, sprintf } from '@wordpress/i18n';
 import { Button, Spinner, Notice, TabPanel } from '@wordpress/components';
 
 import AbilitiesTable from './AbilitiesTable';
+import ClientAbilities from './ClientAbilities';
 import Servers from './Servers';
 
 const SEVERITIES = [ 'critical', 'high', 'medium', 'low', 'info' ];
@@ -261,7 +262,10 @@ export default function App( { config } ) {
 			>
 				{ ( tab ) =>
 					tab.name === 'abilities' ? (
-						<AbilitiesTable abilities={ report.abilities } />
+						<>
+							<AbilitiesTable abilities={ report.abilities } />
+							<ClientAbilities />
+						</>
 					) : (
 						<Servers
 							servers={ report.servers }

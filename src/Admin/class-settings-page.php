@@ -172,6 +172,50 @@ class Settings_Page {
 		if ( function_exists( 'wp_set_script_translations' ) ) {
 			wp_set_script_translations( self::ASSET_HANDLE, 'agent-surface-auditor' );
 		}
+
+		$this->maybe_enqueue_client_abilities();
+	}
+
+	/**
+	 * Populate the browser-side @wordpress/abilities store, but only if core
+	 * actually ships and registers its client integration module.
+	 *
+	 * WordPress 7.0's client-side Abilities API is delivered as script modules
+	 * (`@wordpress/abilities` + `@wordpress/core-abilities`), not classic
+	 * scripts. On installs where core has not yet wired the integration module
+	 * up (it ships the files but registers nothing in 7.0.2), there is no store
+	 * to populate — so we enqueue strictly on a registered-module check and
+	 * skip silently otherwise. The dashboard's client-side panel feature-
+	 * detects the result and stays hidden when the store never appears, so this
+	 * never fabricates a "0 client-side abilities" reading. Read-only: enqueuing
+	 * core's own module adds no auditor surface of our own.
+	 *
+	 * @return void
+	 */
+	private function maybe_enqueue_client_abilities() {
+		if ( ! function_exists( 'wp_script_modules' ) || ! function_exists( 'wp_enqueue_script_module' ) ) {
+			return;
+		}
+
+		$module_id = '@wordpress/core-abilities';
+
+		try {
+			$modules = wp_script_modules();
+
+			// Only enqueue what core has actually registered; guessing an
+			// unregistered id would emit a broken import. The registry is
+			// private, so read it defensively and treat any failure as "absent".
+			$registered = ( new \ReflectionObject( $modules ) )->getProperty( 'registered' );
+			$registered->setAccessible( true );
+			$ids = $registered->getValue( $modules );
+
+			if ( is_array( $ids ) && isset( $ids[ $module_id ] ) ) {
+				wp_enqueue_script_module( $module_id );
+			}
+		} catch ( \Throwable $e ) {
+			// Fail safe: no store population, panel stays hidden. Never fatal.
+			unset( $e );
+		}
 	}
 
 	/**

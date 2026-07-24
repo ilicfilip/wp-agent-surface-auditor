@@ -53,9 +53,12 @@ surface.
 5. **Honest about limits.** Static analysis detects *smells*; the report says
    "no issues detected", never "safe", and every finding carries a
    confidence tier (`high` = read from flags, `medium` = source heuristic,
-   `low` = weak signal). It reads the PHP registry only: WordPress 7.0
-   client-side (JavaScript) abilities are out of scope, and the report says so
-   in a standing `coverage` note rather than passing over them silently.
+   `low` = weak signal). The server-side audit reads the PHP registry only, so
+   it cannot *analyze* WordPress 7.0 client-side (JavaScript) abilities; a
+   standing `coverage` note states that limit, and the dashboard additionally
+   lists any client-side abilities it can read live from the browser store
+   (labelled "not analyzed") — staying silent, never showing a misleading
+   "0", when that store is absent.
 
 ## Install
 
