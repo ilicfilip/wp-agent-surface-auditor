@@ -66,6 +66,7 @@ class Rule_Engine {
 			new Annotation_Mismatch(),
 			new Broad_Cap_Destructive(),
 			new Custom_Server_Exposure(),
+			new Meta_Tool_Exposure(),
 			new Exposed_Weak_Permission(),
 		];
 	}

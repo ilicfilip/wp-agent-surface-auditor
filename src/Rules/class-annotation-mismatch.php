@@ -18,13 +18,23 @@ defined( 'ABSPATH' ) || exit;
  * (`readonly: true`, or `destructive: false` with no readonly claim), but
  * its execute callback's source contains known write indicators.
  *
- * Annotations are self-reported by whoever wrote the ability and flow
- * straight into MCP clients as readOnlyHint/destructiveHint — agents make
- * autonomy decisions on them. A wrong claim is worse than no claim.
+ * Annotations are self-reported by whoever wrote the ability and are not
+ * merely advisory. Two concrete consequences:
  *
- * Low confidence by nature: the indicator may sit on a dead path, or the
- * write may be into the ability's own cache. Presented as "verify", never as
- * an accusation.
+ *  1. HTTP verb. When a client executes a server-side ability, the annotation
+ *     picks the method: `readonly: true` → GET, `destructive` + `idempotent`
+ *     → DELETE, everything else → POST (WP 7.0 client-side Abilities dev note).
+ *     So a `readonly: true` ability that actually writes has its
+ *     state-changing call sent over **GET** — cacheable by proxies and
+ *     browsers, recorded in server logs and Referer headers, prefetchable,
+ *     and the classic shape of a CSRF-able side effect.
+ *  2. Agent autonomy. The same flag reaches MCP clients as readOnlyHint; a
+ *     "safe to call speculatively" claim on a writing ability invites an
+ *     agent to invoke it without confirmation.
+ *
+ * A wrong claim is therefore worse than no claim. Confidence stays capped
+ * (the indicator may sit on a dead path, or the write may be into the
+ * ability's own cache): presented as "verify", never as an accusation.
  */
 class Annotation_Mismatch implements Rule {
 
@@ -76,14 +86,21 @@ class Annotation_Mismatch implements Rule {
 			? 'the implementation performs a write'
 			: 'the implementation appears to write';
 
+		// GET is the verb WP 7.0 selects for `readonly: true`; the harm only
+		// applies to that claim (a `destructive: false` ability still POSTs).
+		$verb_note = $claims_readonly
+			? ' Because it is annotated readonly, WP 7.0 sends this ability\'s call over GET, so a write '
+				. 'here travels as a cacheable, loggable, prefetchable request.'
+			: '';
+
 		return [
 			new Finding(
 				$this->id(),
-				Finding::SEVERITY_MEDIUM,
+				Finding::SEVERITY_HIGH,
 				$confidence,
 				'Annotation claims ' . $claim . ', but ' . $qualifier . ' ('
-					. implode( ', ', array_slice( $indicators, 0, 5 ) ) . ') — verify. '
-					. 'MCP clients receive this annotation as a hint and may act on it autonomously.',
+					. implode( ', ', array_slice( $indicators, 0, 5 ) ) . ') — verify.' . $verb_note
+					. ' MCP clients also receive this annotation as a hint and may act on it autonomously.',
 				'Either correct the annotation to reflect what the ability does, or remove the write from the '
 					. 'implementation. If the write is incidental (e.g. caching), document why the claim holds.'
 			),

@@ -149,8 +149,38 @@ class Audit_Runner {
 				'mcp_adapter'    => $adapter_state,
 			],
 			'summary'      => $summary,
+			'coverage'     => $this->coverage_notes(),
 			'servers'      => $public_servers,
 			'abilities'    => $abilities,
+		];
+	}
+
+	/**
+	 * Standing statements about what this audit does NOT cover.
+	 *
+	 * The auditor's honesty invariant (spec §4.5) forbids letting a surface it
+	 * cannot see look like a clean one. The largest such blind spot in WP 7.0
+	 * is the client-side (JavaScript) Abilities API: abilities registered in
+	 * the browser via `registerAbility()` into the `@wordpress/abilities` store
+	 * never appear in `wp_get_abilities()`, so this PHP-side audit cannot
+	 * inventory, expose-resolve, or analyze them. Their `permissionCallback`
+	 * runs in the browser and is advisory, not a server-side boundary. We
+	 * cannot count them from PHP without a runtime probe, so we disclose the
+	 * category rather than guess a number.
+	 *
+	 * @return array<int, array<string, string>> One entry per known limitation.
+	 */
+	private function coverage_notes() {
+		return [
+			[
+				'id'      => 'client_side_abilities',
+				'summary' => 'Client-side (JavaScript) abilities are not covered.',
+				'detail'  => 'This audit reads the PHP registry (wp_get_abilities()). WordPress 7.0 also '
+					. 'lets plugins register abilities in the browser via registerAbility() into the '
+					. '@wordpress/abilities store; those never reach PHP, so they are not inventoried or '
+					. 'analyzed here. Their permission callback runs client-side and is advisory, not a '
+					. 'server-side access boundary — treat any client-registered ability as unaudited.',
+			],
 		];
 	}
 }

@@ -146,6 +146,21 @@ function Summary( { report } ) {
 					'agent-surface-auditor'
 				) }
 			</p>
+
+			{ Array.isArray( report.coverage ) &&
+				report.coverage.length > 0 && (
+					<ul className="asa-summary__coverage">
+						{ report.coverage.map( ( note ) => (
+							<li
+								key={ note.id }
+								className="asa-summary__coverage-item"
+							>
+								<strong>{ note.summary }</strong>{ ' ' }
+								{ note.detail }
+							</li>
+						) ) }
+					</ul>
+				) }
 		</div>
 	);
 }

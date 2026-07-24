@@ -18,10 +18,11 @@ Agent Surface Auditor is a **read-only** plugin that answers it:
   `wp-abilities/v1 …/run` REST endpoint (`meta.show_in_rest`) *and* MCP
   (the adapter's default server via `meta.mcp.public`, plus custom servers'
   explicit ability lists).
-- **Evaluates a 10-rule catalog** — missing/unconditional/auth-only
+- **Evaluates an 11-rule catalog** — missing/unconditional/auth-only
   permission gates, exposed write/destructive abilities, annotation
-  mismatches ("claims read-only, appears to write"), loose input schemas,
-  broad capabilities on destructive ops, and more.
+  mismatches ("claims read-only, appears to write" — WP 7.0 sends such a call
+  over GET), loose input schemas, broad capabilities on destructive ops,
+  meta-tools that proxy the whole registry, and more.
 - **Scores and reports** — a Tools → Agent Surface dashboard and a JSON
   export for CI or diffing.
 
@@ -52,7 +53,9 @@ surface.
 5. **Honest about limits.** Static analysis detects *smells*; the report says
    "no issues detected", never "safe", and every finding carries a
    confidence tier (`high` = read from flags, `medium` = source heuristic,
-   `low` = weak signal).
+   `low` = weak signal). It reads the PHP registry only: WordPress 7.0
+   client-side (JavaScript) abilities are out of scope, and the report says so
+   in a standing `coverage` note rather than passing over them silently.
 
 ## Install
 
